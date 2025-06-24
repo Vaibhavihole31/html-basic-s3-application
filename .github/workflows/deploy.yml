@@ -1,0 +1,32 @@
+name: Deploy To S3
+
+on:
+  push:
+    branches: 
+      - "*"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: AWS Credentials Configure
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'ap-south-1'  # change to your region
+
+      - name: Push to S3
+        run: |
+          # First sync non-JS/CSS files
+          aws s3 sync ./ s3://html-basic-s3-application --delete --exclude "*.js" --exclude "*.css" --exclude ".git/*" --exclude ".github/*"
+          
+          # Then sync JS files with correct content type
+          aws s3 sync ./ s3://html-basic-s3-application --include "*.js" --content-type "application/javascript" --exclude ".git/*" --exclude ".github/*"
+          
+          # Then sync CSS files with correct content type
+          aws s3 sync ./ s3://html-basic-s3-application --include "*.css" --content-type "text/css" --exclude ".git/*" --exclude ".github/*"
